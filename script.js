@@ -10,7 +10,7 @@ const GROWTH = {
     'seasoning': 0.075
 };
 const BUFFER = {
-    'spices': 0.05,
+    'spices': 0.1,
     'seasoning': 0.2
 };
 
@@ -24,6 +24,7 @@ const calculateBtn = document.getElementById('calculate-btn');
 // --- State ---
 let currentRate = null;
 let bufferedRate = null;
+let fetchingRate = true;
 
 // --- Utility Functions ---
 function showAlert(msg) {
@@ -66,58 +67,8 @@ function createTableRows() {
     tableBody.innerHTML = rows;
 }
 
-// --- Exchange Rate Fetching ---
-async function fetchExchangeRate() {
-    try {
-        // Use a CORS proxy since BCA blocks direct fetch from browsers
-        const proxy = 'https://api.allorigins.win/get?url=';
-        const url = proxy + encodeURIComponent(RATE_SOURCE_URL);
-        const res = await fetch(url);
-        const data = await res.json();
-        const html = data.contents;
-        // Parse the HTML to find the USD Bank Notes > Jual rate
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        // Find the table row for USD
-        let rate = null;
-        doc.querySelectorAll('tr').forEach(tr => {
-            if (tr.textContent.includes('USD')) {
-                const tds = tr.querySelectorAll('td');
-                if (tds.length >= 7) {
-                    // Bank Notes > Jual is the 7th column (index 6)
-                    let raw = tds[6].textContent.trim();
-                    // Remove all non-digit, non-separator
-                    raw = raw.replace(/[^\d.,]/g, '');
-                    // Remove decimal part (after last . or ,)
-                    raw = raw.replace(/([.,]\d{2})$/, '');
-                    // Remove all separators
-                    raw = raw.replace(/[.,]/g, '');
-                    rate = parseInt(raw, 10);
-                }
-            }
-        });
-        if (!rate) throw new Error('Rate not found');
-        currentRate = rate;
-        // Buffered rate: add 500, round to nearest 100
-        bufferedRate = roundToNearest(rate + BUFFER_AMOUNT, BUFFER_ROUND);
-        // Show up to 2 decimals if present
-        rateValue.textContent = (currentRate % 1 === 0)
-            ? IDR_FORMAT.format(currentRate)
-            : IDR_FORMAT.format(Math.floor(currentRate)) + ' (' + currentRate.toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ')';
-        bufferedRateValue.textContent = IDR_FORMAT.format(bufferedRate);
-    } catch (e) {
-        rateValue.textContent = '-';
-        bufferedRateValue.textContent = '-';
-        showAlert('Failed to fetch exchange rate.');
-    }
-}
-
 // --- Calculation Logic ---
-function calculateTable() {
-    if (!bufferedRate) {
-        showAlert('Exchange rate not loaded.');
-        return;
-    }
+function calculateTable(options = { skipIDR: false, onlyIDR: false }) {
     const rows = tableBody.querySelectorAll('tr');
     let valid = true;
     rows.forEach(row => {
@@ -133,46 +84,108 @@ function calculateTable() {
         const year = parseInt(yearInput.value);
         let hasInput = usdInput.value !== '' || yearInput.value !== '';
         if (!hasInput) {
-            // Clear outputs for empty row
-            idrCell.textContent = '-';
-            spicesUsdCell.textContent = '-';
-            spicesIdrCell.textContent = '-';
-            seasoningUsdCell.textContent = '-';
-            seasoningIdrCell.textContent = '-';
+            if (!options.onlyIDR) {
+                spicesUsdCell.textContent = '-';
+                seasoningUsdCell.textContent = '-';
+            }
+            if (!options.skipIDR) {
+                idrCell.textContent = '-';
+                spicesIdrCell.textContent = '-';
+                seasoningIdrCell.textContent = '-';
+            }
             return;
         }
         if (isNaN(usd) || isNaN(year)) {
-            idrCell.textContent = '-';
-            spicesUsdCell.textContent = '-';
-            spicesIdrCell.textContent = '-';
-            seasoningUsdCell.textContent = '-';
-            seasoningIdrCell.textContent = '-';
+            if (!options.onlyIDR) {
+                spicesUsdCell.textContent = '-';
+                seasoningUsdCell.textContent = '-';
+            }
+            if (!options.skipIDR) {
+                idrCell.textContent = '-';
+                spicesIdrCell.textContent = '-';
+                seasoningIdrCell.textContent = '-';
+            }
             valid = false;
             return;
         }
-        // Bottom Price > IDR (rounded to nearest thousand)
-        const idr = roundToNearest(usd * bufferedRate, 1000);
-        idrCell.textContent = IDR_FORMAT.format(idr);
-        // Spices & Powders
         const yearDiff = getCurrentYear() - year;
         let spicesUsd = usd * Math.pow(1 + GROWTH.spices, yearDiff > 0 ? yearDiff : 0) * (1 + BUFFER.spices);
         spicesUsd = roundToDecimal(spicesUsd, 1);
-        spicesUsdCell.textContent = USD_FORMAT.format(spicesUsd);
-        spicesIdrCell.textContent = IDR_FORMAT.format(roundToNearest(spicesUsd * bufferedRate, 1000));
-        // Seasoning Blends
-        let seasoningUsd = usd * Math.pow(1 + GROWTH.seasoning, yearDiff > 0 ? yearDiff : 0) * (1 + BUFFER.seasoning);
-        seasoningUsd = roundToDecimal(seasoningUsd, 1);
-        seasoningUsdCell.textContent = USD_FORMAT.format(seasoningUsd);
-        seasoningIdrCell.textContent = IDR_FORMAT.format(roundToNearest(seasoningUsd * bufferedRate, 1000));
+        if (!options.onlyIDR) {
+            spicesUsdCell.textContent = USD_FORMAT.format(spicesUsd);
+            seasoningUsdCell.textContent = USD_FORMAT.format(
+                roundToDecimal(
+                    usd * Math.pow(1 + GROWTH.seasoning, yearDiff > 0 ? yearDiff : 0) * (1 + BUFFER.seasoning),
+                    1
+                )
+            );
+        }
+        if (!options.skipIDR && bufferedRate) {
+            const idr = roundToNearest(usd * bufferedRate, 1000);
+            idrCell.textContent = IDR_FORMAT.format(idr);
+            spicesIdrCell.textContent = IDR_FORMAT.format(roundToNearest(spicesUsd * bufferedRate, 1000));
+            let seasoningUsd = usd * Math.pow(1 + GROWTH.seasoning, yearDiff > 0 ? yearDiff : 0) * (1 + BUFFER.seasoning);
+            seasoningUsd = roundToDecimal(seasoningUsd, 1);
+            seasoningIdrCell.textContent = IDR_FORMAT.format(roundToNearest(seasoningUsd * bufferedRate, 1000));
+        }
     });
     if (!valid) {
         showAlert('Both Bottom Price > USD and Year must be filled.');
     }
+    return valid;
 }
 
-// --- Event Listeners ---
+// --- Exchange Rate Fetching ---
+async function fetchExchangeRate() {
+    try {
+        const proxy = 'https://api.allorigins.win/get?url=';
+        const url = proxy + encodeURIComponent(RATE_SOURCE_URL);
+        const res = await fetch(url);
+        const data = await res.json();
+        const html = data.contents;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        let rate = null;
+        doc.querySelectorAll('tr').forEach(tr => {
+            if (tr.textContent.includes('USD')) {
+                const tds = tr.querySelectorAll('td');
+                if (tds.length >= 7) {
+                    let raw = tds[6].textContent.trim();
+                    raw = raw.replace(/[^\d.,]/g, '');
+                    raw = raw.replace(/([.,]\d{2})$/, '');
+                    raw = raw.replace(/[.,]/g, '');
+                    rate = parseInt(raw, 10);
+                }
+            }
+        });
+        if (!rate) throw new Error('Rate not found');
+        currentRate = rate;
+        bufferedRate = roundToNearest(rate + BUFFER_AMOUNT, BUFFER_ROUND);
+        rateValue.textContent = (currentRate % 1 === 0)
+            ? IDR_FORMAT.format(currentRate)
+            : IDR_FORMAT.format(Math.floor(currentRate)) + ' (' + currentRate.toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ')';
+        bufferedRateValue.textContent = IDR_FORMAT.format(bufferedRate);
+        if (calculateTable({ skipIDR: true })) {
+            calculateTable();
+        }
+    } catch (e) {
+        rateValue.textContent = '-';
+        bufferedRateValue.textContent = '-';
+        showAlert('Failed to fetch exchange rate.');
+    } finally {
+        fetchingRate = false;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     createTableRows();
+    fetchingRate = true;
     fetchExchangeRate();
-    calculateBtn.addEventListener('click', calculateTable);
+    calculateBtn.addEventListener('click', () => {
+        if (!bufferedRate || fetchingRate) {
+            calculateTable({ skipIDR: true });
+        } else {
+            calculateTable();
+        }
+    });
 });
