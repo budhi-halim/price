@@ -6,8 +6,8 @@ const NUM_ROWS = 10;
 const USD_FORMAT = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
 const IDR_FORMAT = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 const GROWTH = {
-    'spices': 0.015,
-    'seasoning': 0.075
+    'spices': 0.005,
+    'seasoning': 0.015
 };
 const BUFFER = {
     'spices': 0.1,
