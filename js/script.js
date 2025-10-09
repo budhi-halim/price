@@ -158,8 +158,8 @@ async function fetchExchangeRate() {
   try {
     const res = await fetch(EXCHANGE_RATE_URL);
     const data = await res.json();
-    currentRate = data.actual_rate;
-    bufferedRate = data.buffered_rate;
+    currentRate = data.tt_counter_selling_rate;
+    bufferedRate = data.tt_counter_selling_rate_buffered;
     rateValue.textContent = IDR_FORMAT.format(currentRate);
     bufferedRateValue.textContent = IDR_FORMAT.format(bufferedRate);
     if (calculateTable({ skipIDR: true })) {
