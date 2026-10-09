@@ -1,69 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" class="isi-theme" data-theme="system">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Price Calculator</title>
-  <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Price Calculator · Islandsun</title>
+  <link rel="icon" href="assets/family/assets/icons/favicon.ico">
+  <link rel="stylesheet" href="assets/family/css/tokens.css">
+  <link rel="stylesheet" href="assets/family/css/components.css">
+  <link rel="stylesheet" href="assets/family/css/interaction.css">
+  <link rel="stylesheet" href="assets/family/css/workspace.css">
   <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="assets/family/js/navigation.js"></script>
+  <script type="module" src="js/ui.js"></script>
+
 </head>
-<body>
-  <header>
-    <h1>Price Calculator</h1>
-    <div class="darkmode-toggle">
-      <label class="switch">
-        <input type="checkbox" id="darkModeToggle">
-        <span class="slider"></span>
-      </label>
-      <span class="toggle-label">Dark Mode</span>
+<body class="isi-ui isi-workspace" data-family-app>
+  <header class="isi-header">
+    <div class="isi-brand"><img src="assets/family/assets/icons/family.svg" alt=""><span>Price Calculator<small>ISLANDSUN INDONESIA</small></span></div>
+    <div class="isi-header-actions">
+      <a class="isi-button isi-button--quiet" data-family-home href="../isi-share/">All apps</a>
+      <button type="button" id="theme-toggle" class="isi-button isi-button--icon isi-theme-toggle" aria-label="Switch color scheme"></button>
     </div>
   </header>
-
-  <div class="container">
-    <div class="rate-display">
-      Current rate:
-      <span id="rate-value">-</span>
-      →
-      <span id="buffered-rate-value">-</span>
-    </div>
-
-    <div id="error-message" class="hidden"></div>
-
-    <div class="table-container">
-      <div class="table-wrapper">
-        <table id="price-table">
-          <thead>
-            <tr>
-              <th colspan="2"><div class="header-bg">Bottom Price</div></th>
-              <th rowspan="3"><div class="header-bg">Year</div></th>
-              <th colspan="4"><div class="header-bg">Price</div></th>
-            </tr>
-            <tr>
-              <th rowspan="2"><div class="header-bg">USD</div></th>
-              <th rowspan="2"><div class="header-bg">IDR</div></th>
-              <th colspan="2"><div class="header-bg">Spices & Powders</div></th>
-              <th colspan="2"><div class="header-bg">Seasoning Blends</div></th>
-            </tr>
-            <tr>
-              <th><div class="header-bg">USD</div></th>
-              <th><div class="header-bg">IDR</div></th>
-              <th><div class="header-bg">USD</div></th>
-              <th><div class="header-bg">IDR</div></th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- Rows will be generated here -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <button id="calculate-btn">Calculate</button>
-  </div>
-
-  <button id="scrollTopBtn"></button>
-  <div id="alert" class="alert"></div>
-
-  <script src="js/script.js"></script>
+  <main class="workspace-main">
+    <h1>Price Calculator</h1>
+    <div class="rate-cards"><section class="isi-card"><p class="isi-muted">Actual selling rate</p><h2 id="rate-value">—</h2></section><section class="isi-card"><p class="isi-muted">Buffered selling rate</p><h2 id="buffered-rate-value">—</h2></section></div>
+    <div class="workspace-actions"><p id="rate-status" class="isi-notice" role="status"></p><button id="retry-rate" type="button" class="isi-button">Refresh rates</button></div>
+    <section class="isi-card workspace-stack" aria-label="Price calculation">
+      <div class="isi-table-region" tabindex="0" aria-label="Price calculator"><table id="price-table" class="isi-table"><thead><tr><th colspan="2" scope="colgroup">Bottom Price</th><th rowspan="3" scope="col">Year</th><th colspan="4" scope="colgroup">Price</th></tr><tr><th rowspan="2" scope="col">USD</th><th rowspan="2" scope="col">IDR</th><th colspan="2" scope="colgroup">Spices &amp; Powders</th><th colspan="2" scope="colgroup">Seasoning Blends</th></tr><tr><th scope="col">USD</th><th scope="col">IDR</th><th scope="col">USD</th><th scope="col">IDR</th></tr></thead><tbody></tbody></table></div>
+      <p id="validation" class="isi-notice" data-tone="error" role="status" hidden></p>
+      <div class="workspace-actions"><button type="button" id="calculate-btn" class="isi-button isi-button--primary">Calculate</button><button type="button" id="reset" class="isi-button">Reset</button></div>
+    </section></main>
 </body>
 </html>
